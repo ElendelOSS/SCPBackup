@@ -1,0 +1,7 @@
+paramiko==2.4.2
+scp==0.12.1
+setuptools==40.4.3
+wheel==0.32.1
+boto3==1.9.28
+botocore==1.12.28
+invoke==0.14.0

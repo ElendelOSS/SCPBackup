@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: SCP Backup Task Defintion
+Mappings: {}
+
+Parameters:
+  AppName:
+    Type: String
+    Default: SCPBackup
+  IAMStack:
+    Type: String
+    Default: DemoStacks-IAM-Role
+  IAMRole:
+    Type: String
+    Default: SCPBackup
+  Schedule:
+    Type: String
+    Default: 4 hours
+  TaskDefStack:
+    Type: String
+    Default: DemoStacks-TaskDef-Backup
+  TaskDef:
+    Type: String
+    Default: SCPBackup
+  LaunchType:
+    Type: String
+    Default: FARGATE
+  
+
+  Event:
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: SCP Backup
+      Name: !Ref AppName
+      ScheduleExpression: !Sub "rate(${Schedule})"
+      State: ENABLED
+      Targets:
+        - Id: SCPBackup
+          RoleArn: 
+            Fn::ImportValue:
+              !Sub "${IAMStack}-IAM-Role-${IAMRole}"
+          EcsParameters:
+            LaunchType: !Ref LaunchType
+            TaskDefinitionArn: 
+              Fn::ImportValue:
+                !Sub "${TaskDefStack}-TaskDef-${TaskDef}-ARN"
+            TaskCount: 1

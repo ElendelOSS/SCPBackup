@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Backup S3 Bucket
+Mappings: {}
+
+Parameters:
+  BucketName:
+    Type: String
+    Default: ap.southeast.2.backup.bucket.com.au
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      AccessControl: BucketOwnerFullControl
+      BucketName: !Ref BucketName
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: aws:kms
+            KMSMasterKeyID: !Ref Key
+
+  Key: 
+    Type: AWS::KMS::Key
+    Properties: 
+      Description: "SCPBackupKMS"
+      KeyPolicy: 
+        Version: "2012-10-17"
+        Id: "baseline"
+        Statement: 
+          - Sid: "EncryptDecrypt Policy"
+            Effect: "Allow"
+            Principal: 
+              AWS: "arn:aws:iam::012345678901:root"
+            Action: 
+              - "kms:Decrypt"
+              - "kms:DescribeKey"
+              - "kms:Encrypt"
+              - "kms:ListAliases"
+              - "kms:ListKeys"
+            Resource: "*"
+          - Sid: "Allow administration of the key"
+            Effect: "Allow"
+            Principal: 
+              AWS: "arn:aws:iam::012345678901:root"
+            Action: 
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+  
+  KeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/backup
+      TargetKeyId:
+        Ref: Key
+
+Outputs:
+  S3Bucket:
+    Description: S3 Bucket
+    Value: !Ref S3Bucket
+    Export:
+      Name: !Sub "${AWS::StackName}-S3-Backup"
+  Key:
+    Description: KMS Key
+    Value: !Ref Key
+    Export:
+      Name: !Sub "${AWS::StackName}-KMS-Backup"
+  KeyARN:
+    Description: KMS Key ARN
+    Value: !GetAtt Key.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-KMS-Backup-ARN"

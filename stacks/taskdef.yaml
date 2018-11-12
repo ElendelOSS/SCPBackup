@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: SCP Backup Task Defintion
+Mappings: {}
+
+Parameters:
+  AppName:
+    Type: String
+    Default: SCPBackup
+  Family:
+    Type: String
+    Default: SCPBackup
+  ImageName:
+    Type: String
+    Default: scpbackup-container
+  VPCStack:
+    Type: String
+    Default: Buildstacks-VPC
+  SecurityStack:
+    Type: String
+    Default: DemoStacks-SecurityGroups
+  SubnetAZA:
+    Type: String
+    Default: Internal1
+  SubnetAZB:
+    Type: String
+    Default: Internal2
+  SubnetAZC:
+    Type: String
+    Default: Internal3
+  SecurityGroup:
+    Type: String
+    Default: SCPBackup
+  Server:
+    Type: String
+    Default: 127.0.0.1
+  Port:
+    Type: Number
+    Default: 22
+  Username:
+    Type: String
+    Default: backup
+  Password:
+    Type: String
+    Default: password
+  Filesource:
+    Type: String
+    Default: config
+  Bucket:
+    Type: String
+    Default: ap.southeast.2.backup.bucket.com.au
+  ContainerTask:
+    Type: String
+    Default: backupbypassword
+  Logging:
+    Type: String
+    Default: False
+  IAMStack:
+    Type: String
+    Default: DemoStacks-IAM-Role
+  IAMRole:
+    Type: String
+    Default: SCPBackup
+  CPU:
+    Type: Number
+    Default: 256
+  Memory:
+    Type: Number
+    Default: 512
+
+Resources:
+  TaskDefinition: 
+    Type: AWS::ECS::TaskDefinition
+    Properties: 
+      RequiresCompatibilities:
+        - "EC2"
+        - "FARGATE"
+      Memory: !Ref Memory
+      Cpu: !Ref CPU
+      ContainerDefinitions: 
+        - Name: 
+            !Ref AppName
+          Image: !Ref ImageName
+          Command: 
+            - !Sub "${ContainerTask} ${Server} ${Username} ${Password} ${Filesource} ${Bucket}"
+          Essential: "true"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-stream-prefix: "/ecs/"
+              awslogs-group: !Sub "${Family}"
+              awslogs-group: !Ref AWS::StackName
+              awslogs-region: !Ref AWS::Region
+      NetworkMode: awsvpc
+      Family: !Sub "${Family}"
+      ExecutionRoleArn:
+        Fn::ImportValue:
+          !Sub "${IAMStack}-IAM-Role-${IAMRole}-ARN"
+  Logs:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: !Sub "/ecs/${Family}"
+      RetentionInDays: 30
+
+
+Outputs:
+  TaskDefinitionARN:
+    Value: !Ref TaskDefinition
+    Export:
+      Name: !Sub "${AWS::StackName}-TaskDef-${AppName}-ARN"

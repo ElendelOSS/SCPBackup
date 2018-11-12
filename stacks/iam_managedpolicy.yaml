@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: IAM Policy for SCP Backup
+Mappings: {}
+
+Parameters:
+  PolicyName:
+    Type: String
+    Default: SCPBackup
+  S3BucketArn:
+    Type: String
+    Default: ap.southeast.2.backup.bucket.com.au
+
+Resources:
+  ManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties: 
+      Description: Managed Policy for SCP Backup
+      Path: /
+      ManagedPolicyName: !Ref PolicyName
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Sid: BackupPutFile
+          Effect: Allow
+          Action: 
+          - s3:PutObject
+          - s3:PutObjectAcl
+          - s3:List*
+          Resource:
+          - !Sub "arn:aws:s3:::${S3BucketArn}"
+          - !Sub "arn:aws:s3:::${S3BucketArn}/*"
+          
+Outputs:
+  ManagedPolicy:
+    Description: IAM Managed Policy for Backup
+    Export:
+      Name: !Sub "${AWS::StackName}-IAM-ManagedPolicy-${PolicyName}"
+    Value: !Ref ManagedPolicy

@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: IAM Role for SCP Backup
+Mappings: {}
+
+Parameters:
+  RoleName:
+    Type: String
+    Default: SCPBackup
+  IAMStack:
+    Type: String
+    Default: DemoStacks-IAM-ManagedPolicy
+  IAMRole:
+    Type: String
+    Default: SCPBackup
+
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+      - 
+        Fn::ImportValue:
+          !Sub "${IAMStack}-IAM-ManagedPolicy-${IAMRole}"
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: "Allow"
+            Principal: 
+              Service: 
+                - "ecs.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Path: /
+      RoleName: !Sub "${RoleName}"
+
+Outputs:
+  Role:
+    Description: IAM Role for Backup
+    Export:
+      Name: !Sub "${AWS::StackName}-IAM-Role-${IAMRole}"
+    Value: !Ref Role
+  RoleARN:
+    Description: IAM Role for Backup Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-IAM-Role-${IAMRole}-ARN"
+    Value: !GetAtt Role.Arn
